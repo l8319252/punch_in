@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="sheet.ico" rel="shortcut icon" />
+    <title>花名册助手</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; position: sticky; top: 0; background: #f4f4f9; padding: 10px 0; z-index: 100; }
+        button, select { padding: 12px 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+        select { background-color: white; flex-grow: 1; outline: none; }
+        .btn-clear { background-color: #ff4d4f; color: white; border: none; cursor: pointer; }
+        #buttonContainer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .name-btn { background-color: white; color: #333; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; }
+        .name-btn:active { background-color: #e6f7ff; transform: scale(0.95); }
+        .status { margin-top: 10px; font-size: 12px; color: #666; text-align: center; min-height: 1.2em; }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <select id="categorySelect" onchange="loadCategoryData()">
+            <option value="mon">周一</option>
+            <option value="tue">周二</option>
+            <option value="wed">周三</option>
+            <option value="thu">周四</option>
+            <option value="fri">周五</option>
+            <option value="sat">周六</option>
+            <option value="sun">周日</option>
+            <option value="other">其他</option>
+        </select>
+        <button class="btn-clear" onclick="clearClipboard()">清空剪贴板</button>
+    </div>
+
+    <div id="buttonContainer"></div>
+    <div id="status" class="status"></div>
+
+    <script>
+        // 你的数据库配置：直接在对应数组中添加/修改字符串即可
+        const db = {
+            mon: [
+                    "三2班 赵宁",
+                    "三2班 吴凌枫",
+                    "三4班 杨廷意",
+                    "四3班 林婧芾",
+                    "四4班 徐鹤立",
+                    "五1班 袁艺轩",
+                    "五3班 吴禹龙",
+                    "五3班 王文镇",
+                    "六4班 陈凌悦"
+            ],
+            tue: ["一（1）班 李昕冉",
+                "一（1）班 李翊凯",
+                "一（3）班 吴芷昕",
+                "一（3）班 冯梓昊",
+                "一（3）班 蓝尔勒",
+                "一（4）班 孔昱程",
+                "一（5）班 李善儿",
+                "一（5）班 王锦浩",
+                "一（6）班 黄钰慧",
+                "二（1）班 郑意",
+                "二（2）班 赖琪萱",
+
+            ],
+
+            wed: ["一（1）班 曾俞帆",
+                "二（1）班 项泓杰",
+                "二（1）班 李子潼",
+                "二（1）班 温科鑫",
+                "二（2）班 黎奕桐",
+                "二（2）班 李泳霖",
+                "二（2）班 曾俞钦",
+                "二（2）班 沈彦廷",
+                "三（1）班 王茂弘",
+                "三（2）班 林文皓",
+                "四（3）班 蒋广楠",
+                "四（3）班 郭奕宏",
+                "四（3）班 刘子毅",
+                "五（1）班 陈乐希"
+            ],
+
+            thu: [
+                "二（4）班 陈锐珩",
+                "三（1）班 莫颖希",
+                "三（1）班 莫欣媛",
+                "三（1）班 陈梓淇",
+                "三（2）班 薛云腾",
+                "三（4）班 黄铭凯",
+                "四（2）班 胡靖轩",
+                "四（3）班 刘嘉琦",
+                "四（5）班 谢永轩",
+                "五（1）班 刘伟浩",
+                "五（1）班 谢卓昊",
+                "六（3）班 李文翔",
+                "六（3）班 莫展权",
+                "六（3）班 刘景权"
+
+            ],
+            
+            fri: [
+                "三（1）班 李其杰",
+                "三（3）班 李奕泓",
+                "三（3）班 陈俊宇",
+                "三（4）班 谢睿霖",
+                "三（6）班 黄梓宸",
+                "三（6）班 黄梓杰",
+                "三（6）班 孙琸琰",
+                "四（1）班 陈澄",
+                "四（3）班 罗梓煜",
+                "四（4）班 邝韦睿",
+                "四（5）班 李佳媛",
+                "四（6）班 温莘",
+                "四（6）班 赵梓安",
+                "四（7）班 张珈铭",
+                "四（7）班 陈皓天",
+                "四（8）班 杨欣瑶",
+                "四（8）班 李俊玮",
+                "五（1）班 锁胜文",
+                "五（5）班 冯凯琳",
+                "五（6）班 王杰楷",
+                "五（6）班 林宝怡",
+                "六（1）班 赖雅文",
+                "六（2）班 谢锦鸿",
+                "六（2）班 唐熙语",
+                "六（2）班 刘启磊",
+                "六（2）班 万逸凡",
+                "六（3）班 谢毅煊",
+                "六（6）班 李炜杰"
+            
+            ],
+            sat: ["周六任务1", "周六任务2"],
+            sun: ["周日任务1", "周日任务2"],
+            other: ["其他备选项1", "其他备选项2"]
+        };
+
+        const container = document.getElementById('buttonContainer');
+        const status = document.getElementById('status');
+        const categorySelect = document.getElementById('categorySelect');
+
+        // 页面加载完成后自动渲染第一项
+        window.onload = function() {
+            loadCategoryData();
+        };
+
+        // 切换菜单时重新生成按钮
+        function loadCategoryData() {
+            const selectedKey = categorySelect.value;
+            const items = db[selectedKey] || [];
+            
+            container.innerHTML = '';
+            items.forEach(text => {
+                createButton(text);
+            });
+            status.innerText = `已加载 ${items.length} 条数据`;
+        }
+
+        function createButton(text) {
+            const btn = document.createElement('button');
+            btn.className = 'name-btn';
+            btn.innerText = text;
+            btn.onclick = () => appendToClipboard(text);
+            container.appendChild(btn);
+        }
+
+        async function appendToClipboard(newName) {
+            window.focus();
+
+            try {
+                let currentText = "";
+                
+                if (navigator.permissions) {
+                    try {
+                        const permissionStatus = await navigator.permissions.query({ name: 'clipboard-read' });
+                        if (permissionStatus.state === 'denied') {
+                            throw new Error("剪贴板读取权限被拒绝");
+                        }
+                    } catch (pErr) {
+                        console.log("无法预检权限，尝试直接执行");
+                    }
+                }
+
+                try {
+                    currentText = await navigator.clipboard.readText();
+                } catch (readErr) {
+                    console.warn("读取失败，回退到覆盖模式", readErr);
+                    currentText = ""; 
+                }
+
+                const updatedText = currentText + newName + "\n";
+                await navigator.clipboard.writeText(updatedText);
+                showTempStatus(`已添加: ${newName}`);
+            } catch (err) {
+                console.error(err);
+                try {
+                    await navigator.clipboard.writeText(newName);
+                    showTempStatus(`(覆盖写入) 已添加: ${newName}`);
+                } catch (writeErr) {
+                    alert('复制失败，请确保页面已聚焦并授予剪贴板权限');
+                }
+            }
+        }
+
+        async function clearClipboard() {
+            window.focus();
+            try {
+                await navigator.clipboard.writeText("");
+                showTempStatus("剪贴板已清空");
+            } catch (err) {
+                alert('清空失败');
+            }
+        }
+
+        function showTempStatus(msg) {
+            const currentMsg = status.innerText;
+            status.innerText = msg;
+            setTimeout(() => {
+                if(status.innerText === msg) status.innerText = currentMsg;
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
