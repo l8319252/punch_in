@@ -2,222 +2,434 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link href="sheet.ico" rel="shortcut icon" />
-    <title>花名册助手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="checkbox.ico" rel="shortcut icon" />
+    <title>每周日常事项打卡</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .controls { display: flex; gap: 10px; margin-bottom: 20px; position: sticky; top: 0; background: #f4f4f9; padding: 10px 0; z-index: 100; }
-        button, select { padding: 12px 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
-        select { background-color: white; flex-grow: 1; outline: none; }
-        .btn-clear { background-color: #ff4d4f; color: white; border: none; cursor: pointer; }
-        #buttonContainer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .name-btn { background-color: white; color: #333; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; }
-        .name-btn:active { background-color: #e6f7ff; transform: scale(0.95); }
-        .status { margin-top: 10px; font-size: 12px; color: #666; text-align: center; min-height: 1.2em; }
+        :root {
+            --primary-color: #4a90e2;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --disabled-bg: #e0e0e0;
+            --disabled-text: #a0a0a0;
+            --border-radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        /* 顶部星期导航 */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid var(--primary-color);
+            background-color: #fff;
+            color: var(--primary-color);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            background-color: #e8f1fd;
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        /* 三大时段模块布局 */
+        .sections-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .time-section {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid var(--primary-color);
+            color: #2c3e50;
+        }
+
+        /* 按钮容器网格 */
+        .buttons-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        /* 事项按钮核心样式 (宽175px 高90px) */
+        .item-btn {
+            width: 175px;
+            height: 90px;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6ba4efff, #4a90e2);
+            color: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(74, 144, 226, 0.25);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .item-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(74, 144, 226, 0.35);
+        }
+
+        .item-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .item-btn .task-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            text-align: center;
+            word-break: break-all;
+            white-space: pre-line; /* <--- 加上这一句，就能识别换行了 */
+        }
+
+        .item-btn .task-time {
+            font-size: 12px;
+            font-weight: 800;           /* 超级加粗，让字更有分量 */
+            background-color: #ffffff;  /* 给时间加上纯白色的背景底衬 */
+            color: #2c3e50;             /* 用深色文字和白色背景形成强烈对比 */
+            padding: 3px 10px;          /* 左右撑开，做成一个小胶囊的形状 */
+            border-radius: 12px;        /* 圆角边缘 */
+            margin-bottom: 6px;         /* 和下方的名字拉开一点距离 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 加一点点微弱的阴影，让它有立体浮起感 */
+        }
+
+        /* 已完成/禁用状态（变灰） */
+        .item-btn:disabled {
+            background: var(--disabled-bg);
+            color: var(--disabled-text);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .item-btn:disabled .task-time {
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
 
-    <div class="controls">
-        <select id="categorySelect" onchange="loadCategoryData()">
-            <option value="mon">周一</option>
-            <option value="tue">周二</option>
-            <option value="wed">周三</option>
-            <option value="thu">周四</option>
-            <option value="fri">周五</option>
-            <option value="sat">周六</option>
-            <option value="sun">周日</option>
-            <option value="other">其他</option>
-        </select>
-        <button class="btn-clear" onclick="clearClipboard()">清空剪贴板</button>
+    <h1>📅 每周事项管理</h1>
+
+    <!-- 星期切换导航栏 -->
+    <div class="nav-tabs" id="navTabs"></div>
+
+    <!-- 早/中/晚 模块内容 -->
+    <div class="sections-container">
+        <div class="time-section">
+            <div class="section-title">🌅 早晨</div>
+            <div class="buttons-grid" id="grid-morning"></div>
+        </div>
+
+        <div class="time-section">
+            <div class="section-title">☀️ 中午</div>
+            <div class="buttons-grid" id="grid-afternoon"></div>
+        </div>
+
+        <div class="time-section">
+            <div class="section-title">🌙 晚上</div>
+            <div class="buttons-grid" id="grid-evening"></div>
+        </div>
     </div>
 
-    <div id="buttonContainer"></div>
-    <div id="status" class="status"></div>
-
     <script>
-        // 你的数据库配置：直接在对应数组中添加/修改字符串即可
-        const db = {
-            mon: [
-                    "三2班 赵宁",
-                    "三2班 吴凌枫",
-                    "三4班 杨廷意",
-                    "四3班 林婧芾",
-                    "四4班 徐鹤立",
-                    "五1班 袁艺轩",
-                    "五3班 吴禹龙",
-                    "五3班 王文镇",
-                    "六4班 陈凌悦"
-            ],
-            tue: ["一（1）班 李昕冉",
-                "一（1）班 李翊凯",
-                "一（3）班 吴芷昕",
-                "一（3）班 冯梓昊",
-                "一（3）班 蓝尔勒",
-                "一（4）班 孔昱程",
-                "一（5）班 李善儿",
-                "一（5）班 王锦浩",
-                "一（6）班 黄钰慧",
-                "二（1）班 郑意",
-                "二（2）班 赖琪萱",
+        /****************************************************************
+         * 1. 数据配置区：你可以在这里随意修改、添加或删除每天的按钮数据 *
+         ****************************************************************/
+        const WEEK_DATA = {
+            "mon": {
+                name: "周一",
+                morning: [
+                    { id: "mon_m1", name: "🎫买城际票", time: "07:00 - 07:30" },
+                    { id: "mon_m2", name: "🔋电鸡充电", time: "08:30" }
+                ],
+                afternoon: [
+                    { id: "mon_a1", name: "📛工牌\n🎧耳机💾U盘", time: "16:00 - 17:00" },
+                    { id: "mon_a2", name: "🖐🏻袖套☂️阳伞\n🌞防晒霜😷口罩", time: "16:00 - 17:00" },
 
-            ],
+                ],
+                evening: [
+                    { id: "mon_e1", name: "📝作业与课件整理", time: "3min" },
+                    { id: "mon_e2", name: "📝考勤整理", time: "1min" },
 
-            wed: ["一（1）班 曾俞帆",
-                "二（1）班 项泓杰",
-                "二（1）班 李子潼",
-                "二（1）班 温科鑫",
-                "二（2）班 黎奕桐",
-                "二（2）班 李泳霖",
-                "二（2）班 曾俞钦",
-                "二（2）班 沈彦廷",
-                "三（1）班 王茂弘",
-                "三（2）班 林文皓",
-                "四（3）班 蒋广楠",
-                "四（3）班 郭奕宏",
-                "四（3）班 刘子毅",
-                "五（1）班 陈乐希"
-            ],
+                ]
+            },
+            "tue": {
+                name: "周二",
+                morning: [
+                    { id: "tue_m1", name: "早起冥想", time: "07:15 - 07:45" }
+                ],
+                afternoon: [
+                    { id: "tue_a1", name: "📛工牌\n🎧耳机💾U盘", time: "16:00 - 17:00" },
+                    { id: "tue_a2", name: "🖐🏻袖套☂️阳伞\n🌞防晒霜😷口罩", time: "16:00 - 17:00" },
+                ],
+                evening: [
+                    { id: "tue_e1", name: "📝作业与课件整理", time: "3min" },
+                    { id: "tue_e2", name: "📝考勤整理", time: "1min"  }
+                ]
+            },
+            "wed": {
+                name: "周三",
+                morning: [
+                    { id: "wed_", name: "✅️罗家俊打卡", time: "07:00 - 07:40" }
+                ],
+                afternoon: [
+                    { id: "wed_am2", name: "「临时」归还牌牌", time: "08:30" },
+                    { id: "wed_a1", name: "📛工牌\n🎧耳机💾U盘", time: "16:00 - 17:00" },
+                    { id: "wed_a2", name: "🖐🏻袖套☂️阳伞\n🌞防晒霜😷口罩", time: "16:00 - 17:00" },
 
-            thu: [
-                "二（4）班 陈锐珩",
-                "三（1）班 莫颖希",
-                "三（1）班 莫欣媛",
-                "三（1）班 陈梓淇",
-                "三（2）班 薛云腾",
-                "三（4）班 黄铭凯",
-                "四（2）班 胡靖轩",
-                "四（3）班 刘嘉琦",
-                "四（5）班 谢永轩",
-                "五（1）班 刘伟浩",
-                "五（1）班 谢卓昊",
-                "六（3）班 李文翔",
-                "六（3）班 莫展权",
-                "六（3）班 刘景权"
-
-            ],
-            
-            fri: [
-                "三（1）班 李其杰",
-                "三（3）班 李奕泓",
-                "三（3）班 陈俊宇",
-                "三（4）班 谢睿霖",
-                "三（6）班 黄梓宸",
-                "三（6）班 黄梓杰",
-                "三（6）班 孙琸琰",
-                "四（1）班 陈澄",
-                "四（3）班 罗梓煜",
-                "四（4）班 邝韦睿",
-                "四（5）班 李佳媛",
-                "四（6）班 温莘",
-                "四（6）班 赵梓安",
-                "四（7）班 张珈铭",
-                "四（7）班 陈皓天",
-                "四（8）班 杨欣瑶",
-                "四（8）班 李俊玮",
-                "五（1）班 锁胜文",
-                "五（5）班 冯凯琳",
-                "五（6）班 王杰楷",
-                "五（6）班 林宝怡",
-                "六（1）班 赖雅文",
-                "六（2）班 谢锦鸿",
-                "六（2）班 唐熙语",
-                "六（2）班 刘启磊",
-                "六（2）班 万逸凡",
-                "六（3）班 谢毅煊",
-                "六（6）班 李炜杰"
-            
-            ],
-            sat: ["周六任务1", "周六任务2"],
-            sun: ["周日任务1", "周日任务2"],
-            other: ["其他备选项1", "其他备选项2"]
+                ],
+                evening: [
+                    { id: "wed_e1", name: "复盘总结", time: "21:30 - 22:00" }
+                ]
+            },
+            "thu": {
+                name: "周四",
+                morning: [
+                    { id: "thu_m2", name: "🔋电鸡充电", time: "08:30" }
+                ],
+                afternoon: [
+                    { id: "thu_a1", name: "技术分享", time: "14:00 - 15:30" }
+                ],
+                evening: [
+                    { id: "thu_e1", name: "📝考勤整理", time: "1min"  }
+                ]
+            },
+            "fri": {
+                name: "周五",
+                morning: [
+                    { id: "fri_m1", name: "晨间伸展", time: "07:30 - 08:00" }
+                ],
+                afternoon: [
+                    { id: "fri_a1", name: "「临时」归还天涯牌牌", time: "16:00 - 17:30" },
+                ],
+                evening: [
+                    { id: "fri_e1", name: "📝考勤整理", time: "1min" }
+                ]
+            },
+            "sat": {
+                name: "周六",
+                morning: [
+                    { id: "sat_m1", name: "🔑天旭钥匙", time: "08:30 - 11:30" }
+                ],
+                afternoon: [
+                    { id: "sat_a1", name: "午休整理", time: "14:00 - 16:00" }
+                ],
+                evening: [
+                    { id: "sat_e1", name: "朋友聚会", time: "18:30 - 21:00" }
+                ]
+            },
+            "sun": {
+                name: "周日",
+                morning: [
+                    { id: "sun_m1", name: "睡个懒觉", time: "09:00 - 10:00" }
+                ],
+                afternoon: [
+                    { id: "sun_a1", name: "下周规划", time: "15:00 - 16:30" }
+                ],
+                evening: [
+                    { id: "sun_e1", name: "收拾房间", time: "20:00 - 21:00" },
+                    { id: "sun_e2", name: "👀周一提醒", time: "18:30" }
+                ]
+            }
         };
 
-        const container = document.getElementById('buttonContainer');
-        const status = document.getElementById('status');
-        const categorySelect = document.getElementById('categorySelect');
+        /****************************************************************
+         * 2. 核心逻辑处理区                                            *
+         ****************************************************************/
+        let currentDayKey = "mon"; 
 
-        // 页面加载完成后自动渲染第一项
-        window.onload = function() {
-            loadCategoryData();
-        };
-
-        // 切换菜单时重新生成按钮
-        function loadCategoryData() {
-            const selectedKey = categorySelect.value;
-            const items = db[selectedKey] || [];
-            
-            container.innerHTML = '';
-            items.forEach(text => {
-                createButton(text);
-            });
-            status.innerText = `已加载 ${items.length} 条数据`;
+        // 计算今天属于 WEEK_DATA 中的哪个 key（"mon" ~ "sun"）
+        function getTodayKey() {
+            const dayOfWeek = new Date().getDay(); // 0 是周日，1-6 是周一到周六
+            const map = {
+                0: "sun",
+                1: "mon",
+                2: "tue",
+                3: "wed",
+                4: "thu",
+                5: "fri",
+                6: "sat"
+            };
+            return map[dayOfWeek] || "mon";
         }
 
-        function createButton(text) {
-            const btn = document.createElement('button');
-            btn.className = 'name-btn';
-            btn.innerText = text;
-            btn.onclick = () => appendToClipboard(text);
-            container.appendChild(btn);
+        // 获取当前日期字符串 (YYYY-MM-DD) 用于检测跨天重置
+        function getTodayString() {
+            const now = new Date();
+            return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
         }
 
-        async function appendToClipboard(newName) {
-            window.focus();
+        // 检查并处理每日更新逻辑
+        function checkDailyReset() {
+            const todayStr = getTodayString();
+            const lastDate = localStorage.getItem("last_active_date");
 
-            try {
-                let currentText = "";
+            if (lastDate !== todayStr) {
+                // 如果是新的一天，清空所有按钮的变灰打卡状态，并更新保存的日期
+                localStorage.removeItem("disabled_buttons");
+                localStorage.setItem("last_active_date", todayStr);
+            }
+        }
+
+        // 获取当前被禁用的按钮ID集合
+        function getDisabledButtons() {
+            const data = localStorage.getItem("disabled_buttons");
+            return data ? JSON.parse(data) : [];
+        }
+
+        // 记录点击事件：把按钮ID存入禁用列表
+        function disableButton(btnId) {
+            const disabledList = getDisabledButtons();
+            if (!disabledList.includes(btnId)) {
+                disabledList.push(btnId);
+                localStorage.setItem("disabled_buttons", JSON.stringify(disabledList));
+            }
+        }
+
+        // 初始化导航栏按钮
+        function initNav() {
+            const navContainer = document.getElementById("navTabs");
+            navContainer.innerHTML = "";
+
+            Object.keys(WEEK_DATA).forEach(dayKey => {
+                const btn = document.createElement("button");
+                btn.className = `tab-btn ${dayKey === currentDayKey ? 'active' : ''}`;
                 
-                if (navigator.permissions) {
-                    try {
-                        const permissionStatus = await navigator.permissions.query({ name: 'clipboard-read' });
-                        if (permissionStatus.state === 'denied') {
-                            throw new Error("剪贴板读取权限被拒绝");
-                        }
-                    } catch (pErr) {
-                        console.log("无法预检权限，尝试直接执行");
-                    }
-                }
+                // 如果是今天，在按钮文本后加个标识（可选，增强感知）
+                const isToday = dayKey === getTodayKey();
+                btn.innerText = WEEK_DATA[dayKey].name + (isToday ? " (今天)" : "");
 
-                try {
-                    currentText = await navigator.clipboard.readText();
-                } catch (readErr) {
-                    console.warn("读取失败，回退到覆盖模式", readErr);
-                    currentText = ""; 
-                }
+                btn.onclick = () => {
+                    currentDayKey = dayKey;
+                    initNav();
+                    renderDayPage();
+                };
+                navContainer.appendChild(btn);
+            });
+        }
 
-                const updatedText = currentText + newName + "\n";
-                await navigator.clipboard.writeText(updatedText);
-                showTempStatus(`已添加: ${newName}`);
-            } catch (err) {
-                console.error(err);
-                try {
-                    await navigator.clipboard.writeText(newName);
-                    showTempStatus(`(覆盖写入) 已添加: ${newName}`);
-                } catch (writeErr) {
-                    alert('复制失败，请确保页面已聚焦并授予剪贴板权限');
-                }
+        // 渲染指定时段的按钮列表
+        function renderSection(gridId, items) {
+            const container = document.getElementById(gridId);
+            container.innerHTML = "";
+
+            if (!items || items.length === 0) {
+                container.innerHTML = `<span style="color:#a0a0a0; font-size:14px;">暂无事项</span>`;
+                return;
             }
+
+            const disabledList = getDisabledButtons();
+
+            items.forEach(item => {
+
+
+         
+
+                // 1. 创建按钮的主体（或者保留你原本创建 btn 的逻辑）
+                const btn = document.createElement("button");
+                btn.className = "item-btn";
+                btn.id = item.id;
+
+                // 2. 创建存放名字的 div，并用 textContent 赋值（关键点！在这里处理换行）
+                const nameDiv = document.createElement("div");
+                nameDiv.className = "task-name";
+                nameDiv.textContent = item.name; // <--- 用 textContent 代替 innerHTML 里的变量拼接
+
+                // 3. 创建存放时间的 div
+                const timeDiv = document.createElement("div");
+                timeDiv.className = "task-time";
+                timeDiv.textContent = item.time;
+
+                // 4. 把它们组装进按钮里
+                btn.appendChild(timeDiv);
+                btn.appendChild(nameDiv);
+                // 判断是否已被点击变灰
+                if (disabledList.includes(item.id)) {
+                    btn.disabled = true;
+                }
+
+                // 点击事件绑定
+                btn.onclick = () => {
+                    btn.disabled = true;
+                    disableButton(item.id);
+                };
+
+                container.appendChild(btn);
+            });
         }
 
-        async function clearClipboard() {
-            window.focus();
-            try {
-                await navigator.clipboard.writeText("");
-                showTempStatus("剪贴板已清空");
-            } catch (err) {
-                alert('清空失败');
-            }
+        // 渲染整页内容（早中晚）
+        function renderDayPage() {
+            const dayData = WEEK_DATA[currentDayKey];
+            renderSection("grid-morning", dayData.morning);
+            renderSection("grid-afternoon", dayData.afternoon);
+            renderSection("grid-evening", dayData.evening);
         }
 
-        function showTempStatus(msg) {
-            const currentMsg = status.innerText;
-            status.innerText = msg;
-            setTimeout(() => {
-                if(status.innerText === msg) status.innerText = currentMsg;
-            }, 1500);
-        }
+        // 页面加载入口
+        window.onload = () => {
+            checkDailyReset();
+            
+            // 自动将当前页面定位到“今天”
+            currentDayKey = getTodayKey();
+
+            initNav();
+            renderDayPage();
+        };
     </script>
 </body>
 </html>
